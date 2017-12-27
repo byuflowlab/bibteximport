@@ -10,7 +10,7 @@ from unicode_to_latex import unicode_to_latex
 import re
 
 
-NENTRIES = 10
+NENTRIES = 20
 
 
 def runAppleScript(script):
@@ -104,8 +104,8 @@ def importBibTeXIntoBibDesk(bibtex):
 
     # check if valid BibTeX
     if bibtex[0] != '@':
-        print 'BibTeX Not Available'
-        exit()
+        runAppleScript(""" display alert "BibTeX Not Available" """)
+        return False
 
     # convert to latex format (e.g., & -> \&)
     for key in unicode_to_latex.keys():
@@ -137,20 +137,25 @@ def importBibTeXIntoBibDesk(bibtex):
 
     runAppleScript(script)
 
+    return True
 
 
 if __name__ == '__main__':
 
     # get doi
-    doi = None
+    success = False
     default = ''
-    while doi is None:
+
+    while not success:
         doi, default = search(default)
 
-    # get bibtex
-    bibtex = getbibtex(doi)
+        if doi is None:
+            success = False
+        else:
+            # get bibtex
+            bibtex = getbibtex(doi)
 
-    # import
-    importBibTeXIntoBibDesk(bibtex)
+            # import
+            success = importBibTeXIntoBibDesk(bibtex)
 
 
