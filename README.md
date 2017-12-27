@@ -11,5 +11,5 @@ chmod u+x bibteximport.command
 
 Use:
 
-From spotlight just start typing out bibteximport.command then press enter (or rename it to something shorter and more convenient)
+From spotlight (or the free version of Alfred) just start typing out bibteximport.command then press enter.  You might also like to rename the file to something shorter.
 
