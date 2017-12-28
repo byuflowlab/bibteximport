@@ -11,6 +11,7 @@ import re
 
 
 NENTRIES = 20
+MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 
 def runAppleScript(script):
@@ -23,7 +24,7 @@ def quoteAppleScript(string):
     return string.replace('\\', '\\\\').replace('"', '\\"')
 
 
-def search(default):
+def getquery(default):
 
     ascommand = """
     set thequery to display dialog "Crossref Search" default answer "{0}" with icon note buttons {{"Cancel", "Search"}} default button "Search"
@@ -38,6 +39,11 @@ def search(default):
 
     # parse result
     query = result.split(':')[2].strip()
+
+    return query
+
+
+def crossrefsearch(query):
 
     # Use crossref metadata search (beta) to get the DOI
     params = {'q': query, 'rows': str(NENTRIES)}
@@ -55,6 +61,18 @@ def search(default):
 
         citations.append(citation.encode("utf-8"))
         dois.append(doi)
+
+    idx = presentoptions(citations)
+
+    if idx is None:
+        return False, None
+    else:
+        doi = dois[idx]
+        bibtex = getbibtexfromdoi(doi)
+        return True, bibtex
+
+
+def presentoptions(citations):
 
 
     ascommand = """
@@ -74,15 +92,15 @@ def search(default):
     result, error = runAppleScript(ascommand)
 
     if result == 'false':
-        return None, query
+        return None
     else:
         idx = citations.index(result)
-        return dois[idx], query
+        return idx
 
 
 
 
-def getbibtex(doi):
+def getbibtexfromdoi(doi):
 
     # fix escaped chars
     doi = doi.replace('\\', '')
@@ -140,22 +158,99 @@ def importBibTeXIntoBibDesk(bibtex):
     return True
 
 
+def gbooksearch(query):
+
+    params = {'q': query, 'maxResults': NENTRIES, 'fields': 'items(volumeInfo(title,subtitle,authors,publisher,publishedDate,industryIdentifiers))'}
+
+    # search on google books
+    r = requests.get('https://www.googleapis.com/books/v1/volumes', params=params)
+    r.encoding = 'utf-8'
+
+    resultlist = []
+    bibtexlist = []
+
+    for item in r.json()['items']:
+        info = item['volumeInfo']
+
+        title = ''
+        authors = ''
+        publisher = ''
+        publishedDate = ''
+        year = ''
+        month = ''
+        isbn = ''
+        infoString = ''
+
+        if 'title' in info:
+            title = info['title']
+
+        if 'subtitle' in info:
+            title += ": " + info['subtitle']
+
+        if 'authors' in info:
+            authors = ' and '.join(info['authors'])
+            infoString = ', '.join(info['authors'])
+
+        if 'publishedDate' in info:
+            publishedDate = info['publishedDate']
+            entries = publishedDate.split('-')
+            year = entries[0]
+            infoString += ', ' + year
+            if len(entries) > 1:
+                month = MONTHS[int(entries[1]) - 1]
+
+        if 'publisher' in info:
+            publisher = info['publisher']
+            infoString += ', ' + publisher
+
+        if 'industryIdentifiers' in info:
+            for idnt in info['industryIdentifiers']:
+                if idnt['type'] == 'ISBN_10':
+                    isbn = idnt['identifier']
+
+        bibtex = u"""@book{{{},
+        Title = {{{}}},
+        Publisher = {{{}}},
+        Year = {{{}}},
+        Author = {{{}}},
+        Month = {{{}}},
+        ISBN = {{{}}}
+        }}
+        """.format('cite-key', title, publisher, year, authors, month, isbn)
+
+        resultlist.append((title + ', ' + infoString).encode('utf-8'))
+        bibtexlist.append(bibtex.encode('utf-8'))
+
+    idx = presentoptions(resultlist)
+
+    if idx is None:
+        return False, None
+    else:
+        return True, bibtexlist[idx]
+
+
+
+
+
+
+
+
+
 if __name__ == '__main__':
 
     # get doi
     success = False
-    default = ''
+    query = ''
 
     while not success:
-        doi, default = search(default)
+        query = getquery(query)
 
-        if doi is None:
-            success = False
+        if query.startswith('book '):
+            success, bibtex = gbooksearch(query)
         else:
-            # get bibtex
-            bibtex = getbibtex(doi)
+            success, bibtex = crossrefsearch(query)
 
-            # import
+        if success:
             success = importBibTeXIntoBibDesk(bibtex)
 
 
