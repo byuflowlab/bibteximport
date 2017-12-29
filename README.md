@@ -10,8 +10,6 @@ Setup:
 python setup.py install
 ```
 
-Under releases download the app: BI.app (the first time you may need to allow permission to run it in System Preferences > Security).
-
 In BibDesk preferences > General > Application Launch > Open File: select your main reference file so that it will be automatically opened when BibDesk is launched.
 
 Usage:
