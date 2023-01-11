@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>AMApplicationBuild</key>
-	<string>444.1</string>
+	<string>512</string>
 	<key>AMApplicationVersion</key>
-	<string>2.8</string>
+	<string>2.10</string>
 	<key>AMDocumentVersion</key>
 	<string>2</string>
 	<key>actions</key>
@@ -102,12 +102,10 @@ end run</string>
 						<string>0</string>
 					</dict>
 				</dict>
-				<key>conversionLabel</key>
-				<integer>0</integer>
 				<key>isViewVisible</key>
 				<true/>
 				<key>location</key>
-				<string>230.500000:316.000000</string>
+				<string>309.000000:315.000000</string>
 				<key>nibPath</key>
 				<string>/System/Library/Automator/Run AppleScript.action/Contents/Resources/Base.lproj/main.nib</string>
 			</dict>
@@ -163,7 +161,7 @@ end run</string>
 				<key>ActionParameters</key>
 				<dict>
 					<key>COMMAND_STRING</key>
-					<string>source ~/.bash_profile
+					<string>source ~/.zshrc
 
 python "$1"Contents/Resources/bibteximport.py</string>
 					<key>CheckedForUserDefaultShell</key>
@@ -171,7 +169,7 @@ python "$1"Contents/Resources/bibteximport.py</string>
 					<key>inputMethod</key>
 					<integer>1</integer>
 					<key>shell</key>
-					<string>/bin/bash</string>
+					<string>/bin/zsh</string>
 					<key>source</key>
 					<string></string>
 				</dict>
@@ -225,9 +223,9 @@ python "$1"Contents/Resources/bibteximport.py</string>
 					<key>1</key>
 					<dict>
 						<key>default value</key>
-						<string></string>
+						<false/>
 						<key>name</key>
-						<string>source</string>
+						<string>CheckedForUserDefaultShell</string>
 						<key>required</key>
 						<string>0</string>
 						<key>type</key>
@@ -238,9 +236,9 @@ python "$1"Contents/Resources/bibteximport.py</string>
 					<key>2</key>
 					<dict>
 						<key>default value</key>
-						<false/>
+						<string></string>
 						<key>name</key>
-						<string>CheckedForUserDefaultShell</string>
+						<string>source</string>
 						<key>required</key>
 						<string>0</string>
 						<key>type</key>
@@ -278,9 +276,9 @@ python "$1"Contents/Resources/bibteximport.py</string>
 				<key>isViewVisible</key>
 				<true/>
 				<key>location</key>
-				<string>230.500000:679.000000</string>
+				<string>309.000000:497.000000</string>
 				<key>nibPath</key>
-				<string>/System/Library/Automator/Run Shell Script.action/Contents/Resources/English.lproj/main.nib</string>
+				<string>/System/Library/Automator/Run Shell Script.action/Contents/Resources/Base.lproj/main.nib</string>
 			</dict>
 			<key>isViewVisible</key>
 			<true/>
@@ -288,7 +286,7 @@ python "$1"Contents/Resources/bibteximport.py</string>
 	</array>
 	<key>connectors</key>
 	<dict>
-		<key>87296242-5300-4A9D-B5BC-F54611A17148</key>
+		<key>F274E47C-192D-4753-8C38-5EB5436466C1</key>
 		<dict>
 			<key>from</key>
 			<string>76CB7F56-443F-4F4D-8827-06B07419998F - 76CB7F56-443F-4F4D-8827-06B07419998F</string>

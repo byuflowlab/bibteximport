@@ -10,12 +10,12 @@ from unicode_to_latex import unicode_to_latex
 import re
 
 
-NENTRIES = 20
+NENTRIES = 10
 MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 
 def runAppleScript(script):
-    osa = subprocess.Popen(['osascript', '-'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    osa = subprocess.Popen(['osascript', '-'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     output, error = osa.communicate(script)
     return output.strip(), error.strip()
 
@@ -27,7 +27,7 @@ def quoteAppleScript(string):
 def getquery(default):
 
     ascommand = """
-    set thequery to display dialog "Crossref Search" default answer "{0}" with icon note buttons {{"Cancel", "Search"}} default button "Search"
+    set the query to display dialog "Crossref Search" default answer "{0}" with icon note buttons {{"Cancel", "Search"}} default button "Search"
     """.format(default)
 
     # run applescript
@@ -46,30 +46,65 @@ def getquery(default):
 def crossrefsearch(query):
 
     # Use crossref metadata search (beta) to get the DOI
-    params = {'q': query, 'rows': str(NENTRIES)}
-    r = requests.get('http://search.crossref.org/dois', params=params)
+    params = {'query.bibliographic': query, 'rows': str(NENTRIES)}
+    r = requests.get('https://api.crossref.org/works', params=params)
+    items = r.json()["message"]["items"]
 
-    # grab results
+    # write results in XML format for Alfred
     citations = []
     dois = []
-    for j in r.json():
-        doi = j['doi'].split('dx.doi.org/')[1]
-        citation = j['fullCitation']
+    for i in items:
+        doi = i['DOI']
+        author = ""
+        if 'author' in i:
+            for a in i['author']:
+                if 'given' in a and 'family' in a:
+                    author += a['given'] + ' ' + a['family'] + ', '
+        journal = ""
+        if 'container-title' in i:
+            journal = i['container-title'][0]
+        subtitle = author + journal
+        title = i['title'][0]
 
-        # strip out html tag for italic
-        citation = citation.replace('<i>', '').replace('</i>', '')
-
-        citations.append(citation.encode("utf-8"))
+        citations.append(title + ", " + subtitle)
         dois.append(doi)
 
     idx = presentoptions(citations)
-
+        
     if idx is None:
         return False, None
     else:
         doi = dois[idx]
         bibtex = getbibtexfromdoi(doi)
         return True, bibtex
+        
+
+    # # Use crossref metadata search (beta) to get the DOI
+    # params = {'q': query, 'rows': str(NENTRIES)}
+    # r = requests.get('http://search.crossref.org/dois', params=params)
+
+    # # grab results
+    # citations = []
+    # dois = []
+    # for j in r.json():
+    #     print(j)
+    #     doi = j['doi']  #.split('dx.doi.org/')[1]
+    #     citation = j['fullCitation']
+
+    #     # strip out html tag for italic
+    #     citation = citation.replace('<i>', '').replace('</i>', '')
+
+    #     citations.append(citation)  #citation.encode("utf-8"))
+    #     dois.append(doi)
+
+    # idx = presentoptions(citations)
+
+    # if idx is None:
+    #     return False, None
+    # else:
+    #     doi = dois[idx]
+    #     bibtex = getbibtexfromdoi(doi)
+    #     return True, bibtex
 
 
 def presentoptions(citations):
@@ -80,8 +115,10 @@ def presentoptions(citations):
         activate
         try
     """
+    # print(citations[0])
+    N = min(len(citations), NENTRIES)
     ascommand += "set mychoice to (choose from list {\"" + citations[0] + "\""
-    for i in range(1, NENTRIES):
+    for i in range(1, N):
         ascommand += ", \"" + quoteAppleScript(citations[i]) + "\""
     ascommand += """} with prompt "Which Reference?" default items "None" OK button name {"Select"} cancel button name {"Go Back"})
         end try
@@ -130,13 +167,13 @@ def importBibTeXIntoBibDesk(bibtex):
         bibtex = bibtex.replace(key, unicode_to_latex[key])
 
     # encode
-    bibtex = bibtex.encode('utf-8')
+    # bibtex = bibtex.encode('utf-8')
 
     # replace cite-key to allow bibtex to generate own
     bibtex = re.sub('{.*?,', '{cite-key,', bibtex, count=1)
 
     # open BibDesk (opens a document if you have this set in BibTeX preferences)
-    p = subprocess.Popen(['open', '-a', 'BibDesk'], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    p = subprocess.Popen(['open', '-a', 'BibDesk'], stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
     p.communicate()
 
     # applescript to import into BibDesk
@@ -247,6 +284,10 @@ if __name__ == '__main__':
 
         if query.startswith('book '):
             success, bibtex = gbooksearch(query)
+        elif query.endswith('!'):
+            doi = query[:-1]
+            bibtex = getbibtexfromdoi(doi)
+            success = True
         else:
             success, bibtex = crossrefsearch(query)
 
